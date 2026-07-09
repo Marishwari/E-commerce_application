@@ -1,5 +1,5 @@
 const express = require("express");
-const Wishlist = require("../models/Wishlist");
+const Wishlist = require("../models/wishlist");
 const {protect} = require("../middleware/authMiddleware");
 
 const router = express.Router();
