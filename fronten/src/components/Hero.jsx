@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import {  } from "lucide-react";
+import { ArrowRight, Star, ShieldCheck, Zap } from "lucide-react";
+
 export default function Hero() {
   const navigate = useNavigate();
   const THEME_COLOR = "#6E026F";
