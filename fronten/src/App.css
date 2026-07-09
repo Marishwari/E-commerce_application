@@ -1,0 +1,7 @@
+
+@media (max-width: 768px) {
+  /* Hide the purple side on phones */
+  div[style*="background-color: rgb(110, 2, 111)"] { 
+    display: none !important; 
+  }
+}

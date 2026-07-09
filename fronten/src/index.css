@@ -1,0 +1,27 @@
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #ffffff;
+}
+
+.primary {
+  background-color: #6E026F;
+  color: white;
+}
+
+.btn {
+  background-color: #6E026F;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+input {
+  padding: 10px;
+}
