@@ -411,7 +411,7 @@ export default function CheckoutPage() {
             const verifyData = await API.post("/payment/verify", response);
 
             if (verifyData.data.success) {
-              const orderResponse = await API.post(
+              await API.post(
                 "/orders",
                 {
                   orderItems: cart.map((item) => ({

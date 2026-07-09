@@ -3,7 +3,7 @@ import API from "../api";
 import ReviewCard from "./ReviewCard";
 import { FiInbox } from "react-icons/fi";
 
-const THEME_COLOR = "#6E026F";
+
 
 export default function ReviewsList({
   productId,

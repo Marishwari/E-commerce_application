@@ -12,7 +12,7 @@ const app = express();
 // ==============================
 app.use(
   cors({
-    origin: "http://localhost:3000", // ✅ your frontend URL
+    origin: ["http://localhost:3000", "https://luxattire.netlify.app"],// ✅ your frontend URL
     credentials: true,               // ✅ allow cookies/auth
   })
 );

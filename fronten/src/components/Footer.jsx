@@ -9,7 +9,7 @@ import {
 
 export default function LuxyResponsiveFooter() {
   const currentYear = new Date().getFullYear();
-  const THEME_COLOR = "#6E026F";
+
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
