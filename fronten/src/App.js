@@ -20,10 +20,24 @@ import OrderDetails from "./pages/OrderDetails";
 // PRIVATE ROUTE
 // ======================
 const PrivateRoute = ({ children }) => {
-  const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-  return userInfo?.token ? children : <Navigate to="/login" />;
-};
+  let userInfo = null;
 
+  try {
+    userInfo = JSON.parse(localStorage.getItem("userInfo"));
+  } catch (err) {
+    userInfo = null;
+  }
+
+  console.log("userInfo:", userInfo);
+
+  const isAuthed =
+    userInfo &&
+    (userInfo.token || userInfo._id || userInfo.email);
+
+  console.log("isAuthed:", isAuthed);
+
+  return isAuthed ? children : <Navigate to="/login" />;
+};
 function App() {
   return (
     <BrowserRouter>

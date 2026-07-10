@@ -17,13 +17,17 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import API from "../api";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
 
 const THEME_COLOR = "#6E026F";
+const THEME_DARK = "#50025f";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
+  const { toast, showToast, hideToast } = useToast();
 
   // =========================
   // PROFILE STATES
@@ -47,6 +51,7 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
 
   // =========================
   // COUNTS
@@ -125,6 +130,8 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.log(err);
+    } finally {
+      setPageReady(true);
     }
   };
 
@@ -152,10 +159,11 @@ export default function ProfilePage() {
       setEditing(false);
 
       setSaved(true);
+      showToast("Profile updated", "success");
       setTimeout(() => setSaved(false), 1800);
     } catch (err) {
       console.log(err);
-      alert("Failed to update profile");
+      showToast("Failed to update profile", "error");
     } finally {
       setLoading(false);
     }
@@ -193,9 +201,12 @@ export default function ProfilePage() {
     <div style={{ backgroundColor: "#FDFCFE", minHeight: "100vh" }}>
       <Navbar />
 
-      <div style={styles.pageContainer} className="page-container">
+      <div
+        style={styles.pageContainer}
+        className={`page-container ${pageReady ? "is-ready" : ""}`}
+      >
         {/* HEADER */}
-        <header style={styles.header} className="profile-header">
+        <header style={styles.header} className="profile-header anim-item">
           <span style={styles.eyebrow}>EXECUTIVE PROFILE</span>
           <h1 style={styles.title}>MY ACCOUNT</h1>
           <p style={styles.subtitle}>Manage your details &amp; preferences</p>
@@ -203,10 +214,13 @@ export default function ProfilePage() {
 
         <div style={styles.mainGrid} className="profile-grid">
           {/* SIDEBAR */}
-          <aside style={styles.sidebarColumn} className="sidebar-column">
+          <aside
+            style={styles.sidebarColumn}
+            className="sidebar-column anim-item anim-delay-1"
+          >
             <div style={styles.profileCard} className="profile-card">
               <div style={styles.avatarSection}>
-                <div style={styles.avatarCircle}>
+                <div style={styles.avatarCircle} className="avatar-circle">
                   {user?.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
 
@@ -240,14 +254,20 @@ export default function ProfilePage() {
           </aside>
 
           {/* CONTENT */}
-          <div style={styles.contentColumn}>
+          <div style={styles.contentColumn} className="content-column">
             {/* PROFILE SECTION */}
-            <div style={styles.infoSection} className="info-section">
+            <div
+              style={styles.infoSection}
+              className="info-section anim-item anim-delay-2"
+            >
               <div style={styles.sectionHeader} className="section-header">
                 <h3 style={styles.sectionTitle}>Profile Information</h3>
 
                 <button
-                  style={styles.editBtn}
+                  style={{
+                    ...styles.editBtn,
+                    ...(saved ? styles.editBtnSaved : {}),
+                  }}
                   className="edit-btn"
                   onClick={() => {
                     if (editing) {
@@ -256,70 +276,73 @@ export default function ProfilePage() {
                       setEditing(true);
                     }
                   }}
+                  disabled={loading}
                 >
                   {saved ? (
-                    <>
+                    <span className="btn-content pop-in">
                       <Check size={15} /> Saved
-                    </>
+                    </span>
                   ) : editing ? (
-                    <>
-                      <Save size={15} />
+                    <span className="btn-content">
+                      <Save size={15} className={loading ? "spin-icon" : ""} />
                       {loading ? "Saving..." : "Save"}
-                    </>
+                    </span>
                   ) : (
-                    <>
+                    <span className="btn-content">
                       <Edit3 size={15} />
                       Edit
-                    </>
+                    </span>
                   )}
                 </button>
               </div>
 
-              <DataField label="Full Name" value={name} editing={editing} onChange={(e) => setName(e.target.value)} />
+              <div className={`field-transition ${editing ? "is-editing" : ""}`}>
+                <DataField label="Full Name" value={name} editing={editing} onChange={(e) => setName(e.target.value)} />
 
-              <DataField label="Email" value={email} icon={<Mail size={13} />} />
+                <DataField label="Email" value={email} icon={<Mail size={13} />} />
 
-              <DataField
-                label="Phone"
-                value={phone}
-                editing={editing}
-                onChange={(e) => setPhone(e.target.value)}
-                icon={<Phone size={13} />}
-              />
-
-              <DataField
-                label="Full Address"
-                value={fullAddress}
-                editing={editing}
-                onChange={(e) => setFullAddress(e.target.value)}
-              />
-
-              <div style={styles.fieldRow} className="field-row">
-                <DataField label="City" value={city} editing={editing} onChange={(e) => setCity(e.target.value)} />
-                <DataField label="State" value={state} editing={editing} onChange={(e) => setState(e.target.value)} />
-              </div>
-
-              <div style={styles.fieldRow} className="field-row">
                 <DataField
-                  label="Pincode"
-                  value={pincode}
+                  label="Phone"
+                  value={phone}
                   editing={editing}
-                  onChange={(e) => setPincode(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
+                  icon={<Phone size={13} />}
                 />
+
                 <DataField
-                  label="Country"
-                  value={country}
+                  label="Full Address"
+                  value={fullAddress}
                   editing={editing}
-                  onChange={(e) => setCountry(e.target.value)}
+                  onChange={(e) => setFullAddress(e.target.value)}
                 />
+
+                <div style={styles.fieldRow} className="field-row">
+                  <DataField label="City" value={city} editing={editing} onChange={(e) => setCity(e.target.value)} />
+                  <DataField label="State" value={state} editing={editing} onChange={(e) => setState(e.target.value)} />
+                </div>
+
+                <div style={styles.fieldRow} className="field-row">
+                  <DataField
+                    label="Pincode"
+                    value={pincode}
+                    editing={editing}
+                    onChange={(e) => setPincode(e.target.value)}
+                  />
+                  <DataField
+                    label="Country"
+                    value={country}
+                    editing={editing}
+                    onChange={(e) => setCountry(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
             {/* METRICS */}
             <div style={styles.metricsRow} className="metrics-row">
-              <MetricTile icon={<ShoppingBag size={19} />} val={cartCount} label="Cart Items" />
-              <MetricTile icon={<Heart size={19} />} val={wishlistCount} label="Wishlist" />
-              <MetricTile icon={<Package size={19} />} val={orderCount} label="Orders" />
+              <MetricTile icon={<ShoppingBag size={19} />} val={cartCount} label="Cart Items" delay={0} />
+              <MetricTile icon={<Heart size={19} />} val={wishlistCount} label="Wishlist" delay={1} />
+              <MetricTile icon={<Package size={19} />} val={orderCount} label="Orders" delay={2} />
             </div>
           </div>
         </div>
@@ -327,19 +350,215 @@ export default function ProfilePage() {
 
       <Footer />
 
-      <style>{`
-        .logout-btn:hover { background: ${THEME_COLOR}; }
-        .edit-btn:hover { background: #50025f; }
-        .nav-item:hover { color: ${THEME_COLOR} !important; }
+      <Toast message={toast.message} type={toast.type} onClose={hideToast} />
 
+      <style>{`
+        /* ============================= */
+        /* ENTRANCE ANIMATIONS            */
+        /* ============================= */
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes popIn {
+          0% { opacity: 0; transform: scale(0.6); }
+          60% { opacity: 1; transform: scale(1.08); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -400px 0; }
+          100% { background-position: 400px 0; }
+        }
+
+        .anim-item {
+          opacity: 0;
+        }
+
+        .page-container.is-ready .anim-item {
+          animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .page-container.is-ready .anim-delay-1 { animation-delay: 0.08s; }
+        .page-container.is-ready .anim-delay-2 { animation-delay: 0.16s; }
+
+        .metric-tile {
+          opacity: 0;
+        }
+
+        .page-container.is-ready .metric-tile {
+          animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .avatar-circle {
+          animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+          transition: transform 0.3s ease;
+        }
+
+        .profile-card:hover .avatar-circle {
+          transform: scale(1.06) rotate(-2deg);
+        }
+
+        .pop-in {
+          animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .spin-icon {
+          animation: spin 0.9s linear infinite;
+        }
+
+        /* ============================= */
+        /* SMOOTH HOVER / FOCUS STATES     */
+        /* ============================= */
+        .profile-card,
+        .info-section,
+        .metric-tile {
+          transition: box-shadow 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+            transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+            border-color 0.35s ease;
+        }
+
+        .profile-card:hover,
+        .info-section:hover {
+          box-shadow: 10px 10px 0px rgba(110, 2, 111, 0.08);
+        }
+
+        .metric-tile {
+          cursor: default;
+        }
+
+        .metric-tile:hover {
+          transform: translateY(-4px);
+          border-color: ${THEME_COLOR};
+          box-shadow: 8px 8px 0px rgba(110, 2, 111, 0.1);
+        }
+
+        .metric-tile:hover .metric-icon-wrap {
+          transform: scale(1.1);
+          background: ${THEME_COLOR};
+          color: #fff !important;
+        }
+
+        .metric-icon-wrap {
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .nav-item {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .nav-item::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          width: 0;
+          background: rgba(110, 2, 111, 0.05);
+          transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          z-index: 0;
+        }
+
+        .nav-item:hover::before {
+          width: 100%;
+        }
+
+        .nav-item span,
+        .nav-item svg {
+          position: relative;
+          z-index: 1;
+          transition: transform 0.25s ease, color 0.25s ease;
+        }
+
+        .nav-item:hover {
+          color: ${THEME_COLOR} !important;
+        }
+
+        .nav-item:hover svg {
+          transform: translateX(3px);
+        }
+
+        .logout-btn {
+          transition: background 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+            transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .logout-btn:hover {
+          background: ${THEME_COLOR};
+          box-shadow: 0 8px 20px rgba(110, 2, 111, 0.25);
+        }
+
+        .logout-btn:active {
+          transform: scale(0.97);
+        }
+
+        .edit-btn {
+          transition: background 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+            transform 0.2s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+        }
+
+        .edit-btn:hover:not(:disabled) {
+          background: ${THEME_DARK};
+          box-shadow: 0 8px 20px rgba(110, 2, 111, 0.25);
+        }
+
+        .edit-btn:active:not(:disabled) {
+          transform: scale(0.96);
+        }
+
+        .edit-btn:disabled {
+          opacity: 0.75;
+          cursor: default;
+        }
+
+        .btn-content {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        /* Input focus + field transitions */
+        .field-transition input {
+          transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+        }
+
+        .field-transition input:focus {
+          border-color: ${THEME_COLOR} !important;
+          box-shadow: 0 0 0 3px rgba(110, 2, 111, 0.12);
+        }
+
+        .field-box {
+          transition: opacity 0.3s ease;
+        }
+
+        /* ============================= */
+        /* RESPONSIVE LAYOUT              */
+        /* ============================= */
         @media (max-width: 900px) {
           .profile-grid {
             flex-direction: column;
+            align-items: stretch !important;
           }
 
           .sidebar-column {
             width: 100% !important;
             flex: 1 1 auto !important;
+          }
+
+          .content-column {
+            width: 100%;
           }
 
           .metrics-row {
@@ -398,6 +617,27 @@ export default function ProfilePage() {
             border-bottom: 2px solid transparent;
           }
         }
+
+        /* Respect reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+          .anim-item,
+          .metric-tile,
+          .avatar-circle,
+          .pop-in,
+          .spin-icon {
+            animation: none !important;
+            opacity: 1 !important;
+          }
+
+          .profile-card,
+          .info-section,
+          .metric-tile,
+          .logout-btn,
+          .edit-btn,
+          .nav-item svg {
+            transition: none !important;
+          }
+        }
       `}</style>
     </div>
   );
@@ -423,7 +663,7 @@ const SidebarLink = ({ icon, label, active, onClick }) => (
 );
 
 const DataField = ({ label, value, editing, onChange, icon }) => (
-  <div style={styles.fieldBox}>
+  <div style={styles.fieldBox} className="field-box">
     <label style={styles.fieldLabel}>{label}</label>
 
     {editing ? (
@@ -437,9 +677,14 @@ const DataField = ({ label, value, editing, onChange, icon }) => (
   </div>
 );
 
-const MetricTile = ({ icon, val, label }) => (
-  <div style={styles.metricTile} className="metric-tile">
-    <div style={{ color: THEME_COLOR }}>{icon}</div>
+const MetricTile = ({ icon, val, label, delay = 0 }) => (
+  <div
+    style={{ ...styles.metricTile, animationDelay: `${0.25 + delay * 0.08}s` }}
+    className="metric-tile"
+  >
+    <div style={styles.metricIconWrap} className="metric-icon-wrap">
+      {icon}
+    </div>
 
     <div>
       <h4 style={styles.metricValue}>{val}</h4>
@@ -502,6 +747,9 @@ const styles = {
   contentColumn: {
     flex: 1,
     minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "24px",
   },
 
   profileCard: {
@@ -564,7 +812,6 @@ const styles = {
     fontSize: "12px",
     letterSpacing: "1px",
     textTransform: "uppercase",
-    transition: "0.3s",
   },
 
   logoutBtn: {
@@ -583,7 +830,6 @@ const styles = {
     fontSize: "11px",
     letterSpacing: "1.5px",
     textTransform: "uppercase",
-    transition: "0.3s",
   },
 
   infoSection: {
@@ -623,7 +869,10 @@ const styles = {
     fontSize: "11px",
     letterSpacing: "1px",
     textTransform: "uppercase",
-    transition: "0.3s",
+  },
+
+  editBtnSaved: {
+    background: "#1a8a45",
   },
 
   fieldRow: {
@@ -672,7 +921,6 @@ const styles = {
   metricsRow: {
     display: "flex",
     gap: "20px",
-    marginTop: "24px",
   },
 
   metricTile: {
@@ -683,6 +931,18 @@ const styles = {
     gap: "14px",
     flex: 1,
     alignItems: "center",
+  },
+
+  metricIconWrap: {
+    color: THEME_COLOR,
+    width: "42px",
+    height: "42px",
+    borderRadius: "50%",
+    background: "rgba(110, 2, 111, 0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
 
   metricValue: {

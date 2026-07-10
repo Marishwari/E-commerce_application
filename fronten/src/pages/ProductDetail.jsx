@@ -18,13 +18,15 @@ import {
   FiCheck,
   FiCopy,
 } from "react-icons/fi";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
 
 const THEME_COLOR = "#6E026F";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+const { toast, showToast, hideToast } = useToast();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [wishlist, setWishlist] = useState([]);
@@ -77,70 +79,74 @@ export default function ProductDetail() {
   // ADD TO CART
   // =========================
   const addToCart = async () => {
-    if (!currentUser) {
-      navigate("/login");
-      return;
+  if (!currentUser) {
+    navigate("/login");
+    return;
+  }
+
+  setAdding(true);
+  try {
+    await API.post("/cart/add", {
+      productId: product._id,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+    });
+    window.dispatchEvent(new Event("cartUpdated"));
+    showToast("Added to Bag", "success");
+  } catch (err) {
+    let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+    const index = cart.findIndex((item) => item._id === product._id);
+
+    if (index === -1) {
+      cart.push({ ...product, qty: 1 });
+    } else {
+      cart[index].qty += 1;
     }
 
-    setAdding(true);
-    try {
-      await API.post("/cart/add", {
-        productId: product._id,
-        name: product.name,
-        image: product.image,
-        price: product.price,
-      });
-      window.dispatchEvent(new Event("cartUpdated"));
-    } catch (err) {
-      let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-      const index = cart.findIndex((item) => item._id === product._id);
+    localStorage.setItem(cartKey, JSON.stringify(cart));
+    window.dispatchEvent(new CustomEvent("cartUpdated", { detail: { key: cartKey } }));
+    showToast("Added to Bag (offline)", "success");
+  } finally {
+    setTimeout(() => setAdding(false), 1200);
+  }
+};
 
-      if (index === -1) {
-        cart.push({ ...product, qty: 1 });
-      } else {
-        cart[index].qty += 1;
-      }
+const addToWishlist = async () => {
+  if (!currentUser) {
+    navigate("/login");
+    return;
+  }
 
-      localStorage.setItem(cartKey, JSON.stringify(cart));
-      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: { key: cartKey } }));
-    } finally {
-      setTimeout(() => setAdding(false), 1200);
-    }
-  };
+  if (isWishlisted) {
+    showToast("Already in Wishlist", "info");
+    return;
+  }
 
-  // =========================
-  // ADD TO WISHLIST
-  // =========================
-  const addToWishlist = async () => {
-    if (!currentUser) {
-      navigate("/login");
-      return;
-    }
+  try {
+    await API.post("/wishlist/add", {
+      productId: product._id,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+    });
 
-    if (isWishlisted) return;
+    setWishlist([...wishlist, { productId: product._id, ...product }]);
+    window.dispatchEvent(new Event("wishlistUpdated"));
+    showToast("Added to Wishlist", "success");
+  } catch (err) {
+    let localWishlist = JSON.parse(localStorage.getItem(wishlistKey)) || [];
+    const exists = localWishlist.find((item) => item._id === product._id);
 
-    try {
-      await API.post("/wishlist/add", {
-        productId: product._id,
-        name: product.name,
-        image: product.image,
-        price: product.price,
-      });
-
-      setWishlist([...wishlist, { productId: product._id, ...product }]);
+    if (!exists) {
+      localWishlist.push(product);
+      localStorage.setItem(wishlistKey, JSON.stringify(localWishlist));
+      setWishlist(localWishlist);
       window.dispatchEvent(new Event("wishlistUpdated"));
-    } catch (err) {
-      let localWishlist = JSON.parse(localStorage.getItem(wishlistKey)) || [];
-      const exists = localWishlist.find((item) => item._id === product._id);
-
-      if (!exists) {
-        localWishlist.push(product);
-        localStorage.setItem(wishlistKey, JSON.stringify(localWishlist));
-        setWishlist(localWishlist);
-        window.dispatchEvent(new Event("wishlistUpdated"));
-      }
+      showToast("Added to Wishlist (offline)", "success");
     }
-  };
+  }
+};
 
   // =========================
   // SHARE

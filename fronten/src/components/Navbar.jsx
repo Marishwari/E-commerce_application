@@ -12,7 +12,7 @@ import {
 import API from "../api";
 
 // ==========================================
-// 1. EMBEDDED CSS (Sharp, Bold, Uppercase)
+// 1. EMBEDDED CSS (Sharp, Bold, Animated)
 // ==========================================
 const injectedCSS = `
   :root {
@@ -22,7 +22,20 @@ const injectedCSS = `
     --pure-white: #ffffff;
     --text-dark: #1a1a1a;
     --text-gray: #666666;
-    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* KEYFRAMES FOR ENTRANCE & BADGES */
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
   }
 
   .luxy-navbar {
@@ -37,6 +50,7 @@ const injectedCSS = `
     border-bottom: 2px solid transparent;
     transition: var(--transition-smooth);
     font-family: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    animation: slideDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .luxy-navbar.scrolled {
@@ -60,6 +74,11 @@ const injectedCSS = `
     align-items: center;
     cursor: pointer;
     user-select: none;
+    transition: var(--transition-bounce);
+  }
+
+  .nav-logo:hover {
+    transform: scale(1.02);
   }
 
   .logo-luxy {
@@ -113,12 +132,13 @@ const injectedCSS = `
     height: 2px;
     background: var(--theme-plum);
     transform: scaleX(0);
-    transform-origin: left;
+    transform-origin: center;
     transition: var(--transition-smooth);
   }
 
   .nav-item:hover {
     color: var(--text-dark);
+    transform: translateY(-1px);
   }
 
   .nav-item:hover::after {
@@ -139,20 +159,22 @@ const injectedCSS = `
     align-items: center;
     justify-content: center;
     color: var(--text-dark);
-    transition: var(--transition-smooth);
+    transition: var(--transition-bounce);
     width: 40px;
     height: 40px;
+    border-radius: 50%;
   }
 
   .nav-icon-wrapper:hover {
     color: var(--theme-plum);
     background-color: var(--theme-plum-light);
+    transform: translateY(-2px);
   }
 
   .nav-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 0px;
+    right: 0px;
     background: var(--theme-plum);
     color: var(--pure-white);
     min-width: 16px;
@@ -164,6 +186,7 @@ const injectedCSS = `
     font-size: 9px;
     font-weight: 800;
     border: 2px solid var(--pure-white);
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   /* CTA */
@@ -179,11 +202,15 @@ const injectedCSS = `
     text-transform: uppercase;
     transition: var(--transition-smooth);
     margin-left: 8px;
+    position: relative;
+    overflow: hidden;
   }
 
   .nav-cta-btn:hover {
     background: var(--theme-plum);
     border-color: var(--theme-plum);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(110, 2, 111, 0.25);
   }
 
   /* MOBILE HAMBURGER */
@@ -194,23 +221,25 @@ const injectedCSS = `
     padding: 6px;
     align-items: center;
     justify-content: center;
+    transition: var(--transition-bounce);
   }
 
   .mobile-hamburger:hover {
     color: var(--theme-plum);
+    transform: scale(1.1);
   }
 
   /* MOBILE OVERLAY */
   .mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
     z-index: 999;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease;
+    transition: all 0.5s ease;
   }
 
   .mobile-overlay.active {
@@ -229,7 +258,7 @@ const injectedCSS = `
     background: var(--pure-white);
     z-index: 1000;
     transform: translateX(-100%);
-    transition: transform 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
     padding: 26px 22px;
     box-shadow: 15px 0 50px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -266,6 +295,7 @@ const injectedCSS = `
     color: var(--pure-white);
     background: var(--theme-plum);
     border-color: var(--theme-plum);
+    transform: rotate(90deg);
   }
 
   .mobile-section-label {
@@ -276,6 +306,9 @@ const injectedCSS = `
     letter-spacing: 2px;
     color: #aaa;
     text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: var(--transition-smooth);
   }
 
   .mobile-menu-items {
@@ -297,18 +330,35 @@ const injectedCSS = `
     color: var(--text-dark);
     border-bottom: 1px solid #eee;
     transition: var(--transition-smooth);
+    opacity: 0;
+    transform: translateX(-20px);
   }
+
+  /* STAGGERED ANIMATIONS FOR MOBILE MENU */
+  .mobile-sidebar.open .mobile-section-label,
+  .mobile-sidebar.open .mobile-menu-item,
+  .mobile-sidebar.open .mobile-footer-actions {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+  
+  .mobile-sidebar.open .mobile-menu-item:nth-child(1) { transition-delay: 0.1s; }
+  .mobile-sidebar.open .mobile-menu-item:nth-child(2) { transition-delay: 0.15s; }
+  .mobile-sidebar.open .mobile-menu-item:nth-child(3) { transition-delay: 0.2s; }
+  .mobile-sidebar.open .mobile-menu-item:nth-child(4) { transition-delay: 0.25s; }
+  .mobile-sidebar.open .mobile-menu-item:nth-child(5) { transition-delay: 0.3s; }
+  .mobile-sidebar.open .mobile-footer-actions { transition-delay: 0.35s; }
 
   .mobile-menu-item .arrow-icon {
     color: var(--text-gray);
     transition: var(--transition-smooth);
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateX(-12px);
   }
 
   .mobile-menu-item:hover {
     color: var(--theme-plum);
-    padding-left: 20px;
+    padding-left: 22px;
     background-color: var(--theme-plum-light);
   }
 
@@ -324,6 +374,9 @@ const injectedCSS = `
     display: flex;
     flex-direction: column;
     gap: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: var(--transition-smooth);
   }
 
   .mobile-cta-btn {
@@ -347,6 +400,7 @@ const injectedCSS = `
   .mobile-cta-btn:hover {
     background: var(--theme-plum);
     border-color: var(--theme-plum);
+    box-shadow: 0 4px 15px rgba(110, 2, 111, 0.2);
   }
 
   /* ============ RESPONSIVE BREAKPOINTS ============ */
@@ -502,10 +556,7 @@ export default function Navbar() {
   }, [mobileMenuOpen]);
 
   // ==========================================
-  // NAV LINKS — category-only.
-  // Account features (Wishlist / Cart / Profile) live in the
-  // icon actions area on desktop, and in a separate "Account"
-  // section of the mobile menu — no duplication.
+  // NAV LINKS
   // ==========================================
   const navItems = [
     { name: "Home", path: "/" },
@@ -555,7 +606,7 @@ export default function Navbar() {
               aria-label="Wishlist"
             >
               <Heart size={20} strokeWidth={1.8} />
-              {wishlistCount > 0 && <span className="nav-badge">{wishlistCount}</span>}
+              {wishlistCount > 0 && <span className="nav-badge key={wishlistCount}">{wishlistCount}</span>}
             </div>
 
             <div
@@ -564,7 +615,7 @@ export default function Navbar() {
               aria-label="Cart"
             >
               <ShoppingBag size={20} strokeWidth={1.8} />
-              {cartCount > 0 && <span className="nav-badge">{cartCount}</span>}
+              {cartCount > 0 && <span className="nav-badge key={cartCount}">{cartCount}</span>}
             </div>
 
             <div

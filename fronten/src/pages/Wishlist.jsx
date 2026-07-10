@@ -9,6 +9,8 @@ import {
 import Navbar from "../components/Navbar";
 import LuxyResponsiveFooter from "../components/Footer";
 import API from "../api";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
 
 // ==========================================
 // 1. EMBEDDED CSS (Scroll-Safe & Premium)
@@ -277,6 +279,7 @@ export default function Wishlist() {
 
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { toast, showToast, hideToast } = useToast();
 
   const THEME_COLOR = "#6E026F";
 
@@ -338,6 +341,8 @@ export default function Wishlist() {
     setWishlist(updatedWishlist);
     localStorage.setItem(wishlistKey, JSON.stringify(updatedWishlist));
     window.dispatchEvent(new Event("wishlistUpdated"));
+
+    showToast("Removed from Wishlist", "info");
   };
 
   // -------------------------
@@ -362,7 +367,8 @@ export default function Wishlist() {
         }
       );
 
-      alert("Added to Cart ✅");
+      window.dispatchEvent(new Event("cartUpdated"));
+      showToast("Added to Cart", "success");
     } catch (err) {
       console.log("⚠️ Cart backend failed → using localStorage");
 
@@ -382,10 +388,9 @@ export default function Wishlist() {
       }
 
       localStorage.setItem(cartKey, JSON.stringify(cart));
-      alert("Added to Cart ✅ (offline mode)");
+      window.dispatchEvent(new Event("cartUpdated"));
+      showToast("Added to Cart (offline mode)", "success");
     }
-
-    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   // -------------------------
@@ -490,6 +495,8 @@ export default function Wishlist() {
         </main>
 
         <LuxyResponsiveFooter />
+
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       </div>
     </>
   );

@@ -4,6 +4,9 @@ import API from "../api";
 import { GoogleLogin } from "@react-oauth/google";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from "react-icons/fi";
 import { HiOutlineSparkles } from "react-icons/hi";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
+
 
 // ==========================================
 // 1. EMBEDDED CSS (Scroll-Safe & Premium)
@@ -403,13 +406,16 @@ const injectedCSS = `
 `;
 
 // ==========================================
-// 2. REACT COMPONENT
-// ==========================================
+
+
+// ... keep injectedCSS exactly as before ...
+
 const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
+  const { toast, showToast, hideToast } = useToast();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -421,13 +427,18 @@ const Login = () => {
     try {
       const { data } = await API.post("/auth/login", form);
       localStorage.setItem("userInfo", JSON.stringify(data));
+
       if (data.isAdmin) {
-        navigate("/admin");
+        showToast(`Welcome back, ${data.name}`, "success");
+        setTimeout(() => navigate("/admin"), 700);
       } else {
-        navigate("/home");
+        showToast(`Welcome back, ${data.name} 👋`, "success");
+        setTimeout(() => {
+          navigate("/home", { state: { welcome: true, name: data.name } });
+        }, 700);
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Invalid Credentials");
+      showToast(err.response?.data?.message || "Invalid credentials", "error");
     } finally {
       setLoading(false);
     }
@@ -436,21 +447,27 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       const { data } = await API.post("/auth/google", {
-        credential: credentialResponse.credential
+        credential: credentialResponse.credential,
       });
       localStorage.setItem("userInfo", JSON.stringify(data));
-      window.location.href = data.isAdmin ? "/admin" : "/home";
+
+      if (data.isAdmin) {
+        window.location.href = "/admin";
+      } else {
+        sessionStorage.setItem("welcomeName", data.name || "");
+        window.location.href = "/home?welcome=1";
+      }
     } catch (err) {
-      alert("Google Login Failed");
+      showToast("Google login failed", "error");
     }
   };
 
   return (
     <>
       <style>{injectedCSS}</style>
-      
+
       <div className="login-page-wrapper">
-        {/* LEFT: EDITORIAL BRAND PANEL (Desktop Only) */}
+        {/* LEFT: EDITORIAL BRAND PANEL — unchanged */}
         <div className="brand-panel">
           <div className="brand-content">
             <div>
@@ -461,7 +478,7 @@ const Login = () => {
                 LUXY <span className="brand-logo-light">PREMIUM</span>
               </h1>
             </div>
-            
+
             <div>
               <h2 className="brand-slogan">BEYOND <br/> EXPECTATIONS.</h2>
               <div className="brand-accent-line"></div>
@@ -474,11 +491,11 @@ const Login = () => {
           </div>
         </div>
 
-        {/* RIGHT: LOGIN INTERFACE */}
+        {/* RIGHT: LOGIN INTERFACE — unchanged */}
         <div className="form-side">
           <div className="form-card">
             <div className="card-accent"></div>
-            
+
             <header className="form-header">
               <h2 className="form-title">
                 CLIENT <span className="form-title-light">LOGIN</span>
@@ -491,13 +508,13 @@ const Login = () => {
                 <label className="input-label">EMAIL ADDRESS</label>
                 <div className="input-wrapper">
                   <FiMail className="input-icon" />
-                  <input 
-                    name="email" 
-                    type="email" 
-                    placeholder="NAME@DOMAIN.COM" 
-                    onChange={handleChange} 
-                    className="form-input" 
-                    required 
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="NAME@DOMAIN.COM"
+                    onChange={handleChange}
+                    className="form-input"
+                    required
                   />
                 </div>
               </div>
@@ -509,17 +526,17 @@ const Login = () => {
                 </div>
                 <div className="input-wrapper">
                   <FiLock className="input-icon" />
-                  <input 
-                    name="password" 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="••••••••" 
-                    onChange={handleChange} 
-                    className="form-input password-input" 
-                    required 
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    onChange={handleChange}
+                    className="form-input password-input"
+                    required
                   />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
                     className="eye-btn"
                   >
                     {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
@@ -538,10 +555,10 @@ const Login = () => {
               </div>
 
               <div className="google-login-wrapper">
-                <GoogleLogin 
-                  onSuccess={handleGoogleSuccess} 
-                  onError={() => console.log("Failed")}
-                  width="100%" 
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => showToast("Google login failed", "error")}
+                  width="100%"
                 />
               </div>
             </form>
@@ -555,6 +572,8 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      <Toast message={toast.message} type={toast.type} onClose={hideToast} />
     </>
   );
 };

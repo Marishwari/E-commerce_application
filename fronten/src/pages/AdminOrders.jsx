@@ -210,13 +210,13 @@ export default function AdminDashboard() {
       )}
 
       {/* MAIN CONTENT */}
-      <main style={styles.main}>
-        <header style={styles.header}>
+      <main style={styles.main} className="main-content">
+        <header style={styles.header} className="page-header">
           <h1 style={styles.pageTitle}>
             {activeTab === "inventory" ? "Product Management" : "User Directory"}
           </h1>
 
-          <div style={styles.statRow}>
+          <div style={styles.statRow} className="stat-row">
             <StatCard label="Products" value={products.length} />
             <StatCard label="Users" value={users.length} />
           </div>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
         {activeTab === "inventory" ? (
           <div style={styles.grid} className="dashboard-grid">
             {/* PRODUCT FORM */}
-            <section style={styles.card}>
+            <section style={styles.card} className="dashboard-card">
               <div style={styles.formHeader}>
                 <h3 style={styles.cardTitle}>{editingId ? "Edit Item" : "New Item"}</h3>
                 {editingId && (
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
                   onChange={handleChange}
                 />
 
-                <div style={styles.fieldRow}>
+                <div style={styles.fieldRow} className="field-row">
                   <input
                     name="price"
                     style={styles.input}
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                <label style={styles.uploadLabel}>
+                <label style={styles.uploadLabel} className="upload-label">
                   {uploading ? <Loader2 size={17} className="spin" /> : <Upload size={17} />}
                   {product.image ? "Change Image" : "Upload Image"}
                   <input type="file" hidden onChange={(e) => handleImageUpload(e.target.files[0])} />
@@ -302,11 +302,11 @@ export default function AdminDashboard() {
             </section>
 
             {/* PRODUCT LIST */}
-            <section style={styles.card}>
-              <div style={styles.listHeader}>
+            <section style={styles.card} className="dashboard-card">
+              <div style={styles.listHeader} className="list-header">
                 <h3 style={styles.cardTitle}>Live Inventory ({filteredProducts.length})</h3>
 
-                <div style={styles.searchBox}>
+                <div style={styles.searchBox} className="search-box">
                   <Search size={14} color="#999" />
                   <input
                     style={styles.searchInput}
@@ -374,12 +374,12 @@ export default function AdminDashboard() {
             </section>
           </div>
         ) : (
-          /* CUSTOMERS TABLE */
-          <section style={styles.card}>
-            <div style={styles.listHeader}>
+          /* CUSTOMERS SECTION */
+          <section style={styles.card} className="dashboard-card">
+            <div style={styles.listHeader} className="list-header">
               <h3 style={styles.cardTitle}>All Users ({filteredUsers.length})</h3>
 
-              <div style={styles.searchBox}>
+              <div style={styles.searchBox} className="search-box">
                 <Search size={14} color="#999" />
                 <input
                   style={styles.searchInput}
@@ -390,7 +390,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div style={{ overflowX: "auto" }}>
+            {/* DESKTOP/TABLET TABLE VIEW */}
+            <div style={{ overflowX: "auto" }} className="user-table-wrap">
               <table style={styles.table}>
                 <thead>
                   <tr style={styles.theadRow}>
@@ -465,6 +466,61 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
+            {/* MOBILE CARD VIEW */}
+            <div className="user-cards-mobile">
+              {filteredUsers.map((u) => (
+                <div key={u._id} style={styles.userCard} className="user-card">
+                  <div style={styles.userCardTop}>
+                    <div style={styles.userCardAvatar}>
+                      <Users size={16} color={THEME_COLOR} />
+                    </div>
+
+                    <div style={styles.userCardInfo}>
+                      <p style={styles.userCardName}>{u.name}</p>
+                      <div style={styles.userCardEmailRow}>
+                        <Mail size={12} color="#999" />
+                        <span style={styles.userCardEmail}>{u.email}</span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        ...styles.roleBadge,
+                        borderColor: u.isAdmin ? THEME_COLOR : "#1a8a3a",
+                        color: u.isAdmin ? THEME_COLOR : "#1a8a3a",
+                      }}
+                    >
+                      {u.isAdmin ? "Admin" : "Customer"}
+                    </span>
+                  </div>
+
+                  <div style={styles.userCardActions}>
+                    {!u.isAdmin && (
+                      <button
+                        onClick={() => makeAdmin(u._id)}
+                        style={styles.userCardBtn}
+                        className="table-btn-promote"
+                      >
+                        <ShieldCheck size={14} /> Make Admin
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => deleteUser(u._id)}
+                      style={{ ...styles.userCardBtn, color: "#c0392b", borderColor: "#f5c6c0" }}
+                      className="table-btn-delete"
+                    >
+                      <UserMinus size={14} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {filteredUsers.length === 0 && (
+                <p style={{ ...styles.emptyText, textAlign: "center" }}>No users match your search.</p>
+              )}
+            </div>
           </section>
         )}
       </main>
@@ -487,6 +543,7 @@ export default function AdminDashboard() {
         .table-btn-promote:hover { background: #e8f8ee !important; }
         .table-btn-delete:hover { background: #fdecea !important; }
         .product-card:hover { border-color: ${THEME_COLOR} !important; }
+        .user-card:hover { border-color: ${THEME_COLOR} !important; }
 
         .admin-toast {
           animation: toastIn 0.3s ease;
@@ -499,12 +556,25 @@ export default function AdminDashboard() {
         .mobile-topbar { display: none; }
         .mobile-overlay { display: none; }
 
+        /* Mobile card view hidden by default; shown only on small screens */
+        .user-cards-mobile { display: none; }
+
+        /* ============================
+           TABLET / SMALL LAPTOP
+        ============================ */
         @media (max-width: 900px) {
           .dashboard-grid {
             grid-template-columns: 1fr !important;
           }
+
+          .main-content {
+            padding: 28px 24px !important;
+          }
         }
 
+        /* ============================
+           MOBILE — SIDEBAR SWITCH
+        ============================ */
         @media (max-width: 768px) {
           .mobile-topbar {
             display: flex !important;
@@ -532,11 +602,93 @@ export default function AdminDashboard() {
             background: rgba(0,0,0,0.5);
             z-index: 999;
           }
+
+          .main-content {
+            padding: 20px 16px !important;
+          }
+
+          .page-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
+            margin-bottom: 24px !important;
+          }
+
+          .stat-row {
+            width: 100%;
+            gap: 10px !important;
+          }
+
+          .dashboard-card {
+            padding: 18px !important;
+          }
+
+          .list-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+
+          .search-box {
+            width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+          }
+
+          .upload-label {
+            font-size: 11px !important;
+            padding: 14px 10px !important;
+            text-align: center;
+            flex-wrap: wrap;
+          }
+
+          /* Swap table for cards on mobile */
+          .user-table-wrap {
+            display: none !important;
+          }
+
+          .user-cards-mobile {
+            display: flex !important;
+            flex-direction: column;
+            gap: 12px;
+          }
         }
 
+        /* ============================
+           SMALL PHONES
+        ============================ */
         @media (max-width: 560px) {
           .product-grid {
             grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+
+          .field-row {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+
+          .main-content {
+            padding: 16px 12px !important;
+          }
+
+          .dashboard-card {
+            padding: 14px !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .product-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .admin-toast {
+            left: 12px !important;
+            right: 12px !important;
+            transform: none !important;
+            bottom: 16px !important;
+            width: auto !important;
+            max-width: none !important;
+            justify-content: center;
           }
         }
       `}</style>
@@ -992,6 +1144,7 @@ const styles = {
     fontWeight: "800",
     letterSpacing: "0.5px",
     textTransform: "uppercase",
+    whiteSpace: "nowrap",
   },
 
   tableBtn: {
@@ -1002,6 +1155,82 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // ============================
+  // MOBILE USER CARD STYLES
+  // ============================
+  userCard: {
+    border: "1px solid #eee",
+    padding: "14px",
+    transition: "0.2s",
+  },
+
+  userCardTop: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "10px",
+    marginBottom: "12px",
+  },
+
+  userCardAvatar: {
+    width: "34px",
+    height: "34px",
+    minWidth: "34px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(110,2,111,0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  userCardInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  userCardName: {
+    margin: 0,
+    fontSize: "13px",
+    fontWeight: "800",
+    color: "#1a1a1a",
+  },
+
+  userCardEmailRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+    marginTop: "4px",
+  },
+
+  userCardEmail: {
+    fontSize: "11px",
+    color: "#888",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+
+  userCardActions: {
+    display: "flex",
+    gap: "8px",
+  },
+
+  userCardBtn: {
+    flex: 1,
+    border: "1px solid #eee",
+    backgroundColor: "#fafafa",
+    cursor: "pointer",
+    padding: "9px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    fontSize: "11px",
+    fontWeight: "700",
+    letterSpacing: "0.3px",
+    textTransform: "uppercase",
+    color: "#333",
   },
 
   toast: {
@@ -1019,5 +1248,6 @@ const styles = {
     alignItems: "center",
     gap: "8px",
     zIndex: 2000,
+    maxWidth: "90vw",
   },
 };

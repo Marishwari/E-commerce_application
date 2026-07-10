@@ -4,6 +4,8 @@ import API from "../api";
 import { GoogleLogin } from "@react-oauth/google";
 import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from "react-icons/fi";
 import { HiOutlineSparkles } from "react-icons/hi";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
 
 // ==========================================
 // 1. EMBEDDED CSS (Scroll-Safe & Premium)
@@ -23,7 +25,7 @@ const injectedCSS = `
 
   .register-page-wrapper {
     display: flex;
-    min-height: 100vh; /* FIXED: Was height: 100vh */
+    min-height: 100vh;
     width: 100%;
     background-color: var(--bg-light);
     overflow-x: hidden;
@@ -38,7 +40,7 @@ const injectedCSS = `
     display: flex;
     padding: 60px;
     box-sizing: border-box;
-    min-height: 100vh; /* FIXED */
+    min-height: 100vh;
   }
 
   .brand-content {
@@ -111,7 +113,7 @@ const injectedCSS = `
     align-items: center;
     padding: 40px;
     box-sizing: border-box;
-    min-height: 100vh; /* FIXED */
+    min-height: 100vh;
   }
 
   .form-card {
@@ -348,36 +350,92 @@ const injectedCSS = `
     .brand-panel {
       display: none;
     }
-    
+
     .form-side {
       flex: 1;
-      padding: 40px 20px;
+      padding: 24px 16px;
+      align-items: flex-start;
+      padding-top: 50px;
     }
-    
+
     .form-card {
       border: none;
       box-shadow: none;
       padding: 0;
       background: transparent;
       max-width: 100%;
+      animation: none;
+      opacity: 1;
+      transform: none;
     }
-    
+
     .card-accent {
       display: none;
     }
-    
+
+    .form-header {
+      margin-bottom: 26px;
+      text-align: center;
+    }
+
     .form-title {
-      font-size: 22px;
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .form-subtitle {
+      font-size: 10px;
+    }
+
+    .register-form {
+      gap: 18px;
+    }
+
+    .form-input {
+      font-size: 16px; /* prevents iOS auto-zoom on focus */
+      padding: 14px 14px 14px 42px;
+    }
+
+    .input-icon {
+      left: 13px;
+      font-size: 15px;
+    }
+
+    .submit-btn {
+      padding: 16px;
+      font-size: 12px;
+    }
+
+    .divider-text {
+      font-size: 8px;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      margin-top: 24px;
     }
   }
 
   @media (max-width: 480px) {
     .form-side {
-      padding: 30px 15px;
+      padding: 20px 14px 40px;
     }
-    
+
+    .form-title {
+      font-size: 18px;
+    }
+
+    .input-label {
+      font-size: 9px;
+    }
+
     .submit-btn {
       padding: 15px;
+      letter-spacing: 1px;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      letter-spacing: 1px; /* avoid overflow on tiny screens */
     }
   }
 `;
@@ -390,31 +448,60 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const { toast, showToast, hideToast } = useToast();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+const submitHandler = async (e) => {
+  e.preventDefault();
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  try {
+    const { data } = await API.post("/auth/register", form);
+
+    console.log("1. API Success");
+    console.log(data);
+
+    localStorage.setItem("userInfo", JSON.stringify(data));
+
+    console.log("2. Saved to localStorage");
+
+    // Comment this temporarily
+    // showToast("Registered Successfully! 🎉", "success");
+
+    console.log("3. Before navigate");
+
+    navigate("/home");
+
+    console.log("4. After navigate");
+  } catch (err) {
+    console.error(err);
+  }
+};
+  const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const { data } = await API.post("/auth/register", form);
+      const { data } = await API.post("/auth/google", {
+        credential: credentialResponse.credential,
+      });
       localStorage.setItem("userInfo", JSON.stringify(data));
-      navigate("/home");
+
+      if (data.isAdmin) {
+        window.location.href = "/admin";
+      } else {
+        sessionStorage.setItem("welcomeName", data.name || "");
+        window.location.href = "/home?welcome=1";
+      }
     } catch (err) {
-      alert(err.response?.data?.message || "Error");
-    } finally {
-      setLoading(false);
+      showToast("Google login failed", "error");
     }
   };
 
   return (
     <>
       <style>{injectedCSS}</style>
-      
+
       <div className="register-page-wrapper">
-        {/* LEFT: EDITORIAL BRAND PANEL (Desktop Only) */}
+        {/* LEFT: EDITORIAL BRAND PANEL */}
         <div className="brand-panel">
           <div className="brand-content">
             <div>
@@ -425,7 +512,7 @@ const Register = () => {
                 LUXY <span className="brand-logo-light">PREMIUM</span>
               </h1>
             </div>
-            
+
             <div>
               <h2 className="brand-slogan">DEFINING <br/> THE STANDARD.</h2>
               <div className="brand-accent-line"></div>
@@ -442,7 +529,7 @@ const Register = () => {
         <div className="form-side">
           <div className="form-card">
             <div className="card-accent"></div>
-            
+
             <header className="form-header">
               <h2 className="form-title">
                 CLIENT <span className="form-title-light">REGISTRATION</span>
@@ -455,12 +542,12 @@ const Register = () => {
                 <label className="input-label">FULL NAME</label>
                 <div className="input-wrapper">
                   <FiUser className="input-icon" />
-                  <input 
-                    name="name" 
-                    placeholder="E.G. ALEXANDER VOGUE" 
-                    onChange={handleChange} 
-                    className="form-input" 
-                    required 
+                  <input
+                    name="name"
+                    placeholder="E.G. ALEXANDER VOGUE"
+                    onChange={handleChange}
+                    className="form-input"
+                    required
                   />
                 </div>
               </div>
@@ -469,13 +556,13 @@ const Register = () => {
                 <label className="input-label">EMAIL ADDRESS</label>
                 <div className="input-wrapper">
                   <FiMail className="input-icon" />
-                  <input 
-                    name="email" 
-                    type="email" 
-                    placeholder="NAME@DOMAIN.COM" 
-                    onChange={handleChange} 
-                    className="form-input" 
-                    required 
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="NAME@DOMAIN.COM"
+                    onChange={handleChange}
+                    className="form-input"
+                    required
                   />
                 </div>
               </div>
@@ -484,17 +571,17 @@ const Register = () => {
                 <label className="input-label">SECURE PASSWORD</label>
                 <div className="input-wrapper">
                   <FiLock className="input-icon" />
-                  <input 
-                    name="password" 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="••••••••" 
-                    onChange={handleChange} 
-                    className="form-input password-input" 
-                    required 
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    onChange={handleChange}
+                    className="form-input password-input"
+                    required
                   />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
                     className="eye-btn"
                   >
                     {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
@@ -512,13 +599,13 @@ const Register = () => {
                 <div className="divider-line"></div>
               </div>
 
-              <div className="google-login-wrapper">
-                <GoogleLogin 
-                  onSuccess={(res) => console.log(res)} 
-                  onError={() => console.log("Failed")}
-                  width="100%" 
-                />
-              </div>
+               <div className="google-login-wrapper">
+                             <GoogleLogin
+                               onSuccess={handleGoogleSuccess}
+                               onError={() => showToast("Google login failed", "error")}
+                               width="100%"
+                             />
+                           </div>
             </form>
 
             <p className="footer-text">
@@ -530,6 +617,8 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      <Toast message={toast.message} type={toast.type} onClose={hideToast} />
     </>
   );
 };

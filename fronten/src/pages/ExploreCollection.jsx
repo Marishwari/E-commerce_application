@@ -3,6 +3,8 @@ import API from "../api";
 import Navbar from "../components/Navbar";
 import LuxyResponsiveFooter from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
 
 import {
   FiSearch,
@@ -19,6 +21,7 @@ export default function ExploreCollection() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [wishlist, setWishlist] = useState([]);
+  const { toast, showToast, hideToast } = useToast();
 
   const navigate = useNavigate();
 
@@ -96,7 +99,7 @@ export default function ExploreCollection() {
 
       window.dispatchEvent(new Event("cartUpdated"));
 
-      alert("Added to Cart ✅");
+      showToast("Added to Cart", "success");
     } catch (err) {
       console.log("Backend failed, using localStorage fallback");
 
@@ -124,7 +127,7 @@ export default function ExploreCollection() {
         })
       );
 
-      alert("Added to Cart ✅ (offline mode)");
+      showToast("Added to Cart (offline mode)", "success");
     }
   };
 
@@ -146,7 +149,7 @@ export default function ExploreCollection() {
     );
 
     if (alreadyExists) {
-      alert("Already in Wishlist ❤️");
+      showToast("Already in Wishlist", "info");
       return;
     }
 
@@ -173,7 +176,7 @@ export default function ExploreCollection() {
         new Event("wishlistUpdated")
       );
 
-      alert("Added to Wishlist ❤️");
+      showToast("Added to Wishlist", "success");
     } catch (err) {
       console.log(
         "Backend failed, using localStorage fallback"
@@ -206,9 +209,9 @@ export default function ExploreCollection() {
           new Event("wishlistUpdated")
         );
 
-        alert("Added to Wishlist ❤️ (offline)");
+        showToast("Added to Wishlist (offline)", "success");
       } else {
-        alert("Already in Wishlist ❤️");
+        showToast("Already in Wishlist", "info");
       }
     }
   };
@@ -291,7 +294,6 @@ export default function ExploreCollection() {
             className="collection-grid"
           >
             {products.map((p) => {
-              // ✅ FIXED HERE
               const isWishlisted =
                 wishlist.some(
                   (item) =>
@@ -433,6 +435,8 @@ export default function ExploreCollection() {
       </div>
 
       <LuxyResponsiveFooter />
+
+      <Toast message={toast.message} type={toast.type} onClose={hideToast} />
 
       <style>{`
         .collection-grid {
